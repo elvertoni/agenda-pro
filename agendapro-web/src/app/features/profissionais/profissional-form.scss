@@ -1,0 +1,33 @@
+.estado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+
+  .erro {
+    color: var(--mat-sys-error);
+  }
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+  margin-top: 16px;
+}
+
+.erro-geral {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--mat-sys-error);
+}
+
+.botoes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

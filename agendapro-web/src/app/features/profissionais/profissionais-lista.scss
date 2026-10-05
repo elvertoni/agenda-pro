@@ -1,0 +1,132 @@
+.cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+.filtro {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.estado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+
+  .erro {
+    color: var(--mat-sys-error);
+  }
+}
+
+.tabela-rolavel {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+}
+
+.situacao {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  mat-icon {
+    color: var(--mat-sys-primary);
+  }
+
+  &.inativo mat-icon {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+// Celular: cada linha vira um cartão (nome e especialidade em cima, situação ao lado, ações embaixo).
+// Assim as ações aparecem sem rolar a tabela para o lado.
+@media (max-width: 599.98px) {
+  table {
+    display: block;
+  }
+
+  // O <tbody> é criado dentro do mat-table, fora do template desta tela, e o CSS de componente
+  // só alcança elementos do próprio template. ::ng-deep (limitado a esta tela pelo :host) resolve.
+  :host ::ng-deep tbody {
+    display: block;
+  }
+
+  // O cabeçalho some da vista, mas continua para leitor de tela.
+  tr[mat-header-row] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  tr[mat-row] {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    height: auto;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  td[mat-cell] {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: 0;
+  }
+
+  .mat-column-nome {
+    grid-column: 1;
+    font-weight: 500;
+  }
+
+  .mat-column-especialidade {
+    grid-column: 1;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .mat-column-situacao {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .mat-column-acoes {
+    grid-column: 1 / -1;
+  }
+
+  .acoes {
+    justify-content: flex-start;
+  }
+}
+
+// Texto só para leitor de tela: a coluna de ações não tem título visível.
+.so-leitor-de-tela {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}

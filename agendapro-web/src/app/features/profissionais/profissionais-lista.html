@@ -1,0 +1,118 @@
+<div class="cabecalho">
+  <h1>Profissionais</h1>
+  <a matButton="filled" routerLink="/profissionais/novo">
+    <mat-icon aria-hidden="true">add</mat-icon>
+    Novo profissional
+  </a>
+</div>
+
+<form class="filtro" [formGroup]="filtro" (ngSubmit)="carregar()">
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Especialidade</mat-label>
+    <input matInput formControlName="especialidade" autocomplete="off" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic">
+    <mat-label>Situação</mat-label>
+    <mat-select formControlName="situacao">
+      <mat-option value="todos">Todos</mat-option>
+      <mat-option value="ativos">Ativos</mat-option>
+      <mat-option value="inativos">Inativos</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <button matButton="filled" type="submit" [disabled]="estado() === 'carregando'">Filtrar</button>
+  <button matButton type="button" (click)="limparFiltro()">Limpar</button>
+</form>
+
+@switch (estado()) {
+  @case ('carregando') {
+    <div class="estado" role="status">
+      <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
+      <span>Carregando profissionais...</span>
+    </div>
+  }
+
+  @case ('erro') {
+    <div class="estado" role="alert">
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Não foi possível carregar a lista de profissionais.</span>
+      <button matButton type="button" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+
+  @case ('pronto') {
+    @if (profissionais().length === 0) {
+      <div class="estado" role="status">
+        @if (comFiltro()) {
+          <span>Nenhum profissional encontrado com esses filtros.</span>
+        } @else {
+          <span>Nenhum profissional cadastrado.</span>
+          <a matButton routerLink="/profissionais/novo">Cadastrar o primeiro</a>
+        }
+      </div>
+    } @else {
+      <!-- A tabela rola na horizontal em tela estreita, em vez de estourar a largura da página. -->
+      <div class="tabela-rolavel">
+        <table mat-table [dataSource]="profissionais()">
+          <ng-container matColumnDef="nome">
+            <th mat-header-cell *matHeaderCellDef>Nome</th>
+            <td mat-cell *matCellDef="let p">{{ p.nome }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="especialidade">
+            <th mat-header-cell *matHeaderCellDef>Especialidade</th>
+            <td mat-cell *matCellDef="let p">{{ p.especialidade }}</td>
+          </ng-container>
+
+          <!-- A situação tem ícone e texto: não depende só de cor. -->
+          <ng-container matColumnDef="situacao">
+            <th mat-header-cell *matHeaderCellDef>Situação</th>
+            <td mat-cell *matCellDef="let p">
+              <span class="situacao" [class.inativo]="!p.ativo">
+                <mat-icon aria-hidden="true">{{ p.ativo ? 'check_circle' : 'cancel' }}</mat-icon>
+                {{ p.ativo ? 'Ativo' : 'Inativo' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acoes">
+            <th mat-header-cell *matHeaderCellDef><span class="so-leitor-de-tela">Ações</span></th>
+            <td mat-cell *matCellDef="let p">
+              <div class="acoes">
+                <a
+                  matIconButton
+                  [routerLink]="['/profissionais', p.id, 'editar']"
+                  [attr.aria-label]="'Editar ' + p.nome"
+                  title="Editar"
+                >
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                </a>
+                <a
+                  matIconButton
+                  [routerLink]="['/profissionais', p.id, 'horarios']"
+                  [attr.aria-label]="'Expediente de ' + p.nome"
+                  title="Expediente"
+                >
+                  <mat-icon aria-hidden="true">schedule</mat-icon>
+                </a>
+                <button
+                  matButton
+                  type="button"
+                  [disabled]="emAlteracao().includes(p.id)"
+                  [attr.aria-label]="(p.ativo ? 'Inativar ' : 'Ativar ') + p.nome"
+                  (click)="alternarAtivo(p)"
+                >
+                  {{ p.ativo ? 'Inativar' : 'Ativar' }}
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="colunas"></tr>
+          <tr mat-row *matRowDef="let linha; columns: colunas"></tr>
+        </table>
+      </div>
+    }
+  }
+}

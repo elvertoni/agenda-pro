@@ -1,0 +1,132 @@
+<a matButton routerLink="/profissionais">
+  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+  Voltar para a lista
+</a>
+
+@switch (estado()) {
+  @case ('carregando') {
+    <h1>Expediente</h1>
+    <div class="estado" role="status">
+      <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
+      <span>Carregando expediente...</span>
+    </div>
+  }
+
+  @case ('nao-encontrado') {
+    <h1>Expediente</h1>
+    <div class="estado" role="alert">
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Profissional não encontrado.</span>
+    </div>
+  }
+
+  @case ('erro') {
+    <h1>Expediente</h1>
+    <div class="estado" role="alert">
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Não foi possível carregar o expediente.</span>
+      <button matButton type="button" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+
+  @case ('pronto') {
+    @if (profissional(); as pessoa) {
+      <h1>Expediente de {{ pessoa.nome }}</h1>
+      <p class="especialidade">{{ pessoa.especialidade }}</p>
+
+      @if (!pessoa.ativo) {
+        <p class="aviso">
+          <mat-icon aria-hidden="true">info</mat-icon>
+          Este profissional está inativo e não recebe agendamentos.
+        </p>
+      }
+    }
+
+    <section aria-labelledby="titulo-adicionar">
+      <h2 id="titulo-adicionar">Adicionar horário</h2>
+
+      <form class="formulario" [formGroup]="form" #diretiva="ngForm" (ngSubmit)="adicionar(diretiva)">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Dia da semana</mat-label>
+          <mat-select formControlName="diaSemana">
+            @for (opcao of opcoesDia; track opcao.valor) {
+              <mat-option [value]="opcao.valor">{{ opcao.nome }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Início</mat-label>
+          <input matInput type="time" formControlName="horaInicio" />
+          <mat-error>Informe a hora de início.</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Fim</mat-label>
+          <input matInput type="time" formControlName="horaFim" />
+          <mat-error>Informe a hora de fim.</mat-error>
+        </mat-form-field>
+
+        <button matButton="filled" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Adicionando...' : 'Adicionar' }}
+        </button>
+      </form>
+
+      <!-- Erro do grupo (fim antes do início): o mat-error é por campo, então vai em um aviso à parte. -->
+      @if (form.hasError('fimAntesDoInicio')) {
+        <p class="erro-geral" role="alert">
+          <mat-icon aria-hidden="true">error</mat-icon>
+          A hora de fim deve ser maior que a hora de início.
+        </p>
+      }
+
+      @if (erroAdicionar(); as mensagem) {
+        <p class="erro-geral" role="alert">
+          <mat-icon aria-hidden="true">error</mat-icon>
+          {{ mensagem }}
+        </p>
+      }
+    </section>
+
+    <section aria-labelledby="titulo-semana">
+      <h2 id="titulo-semana">Semana</h2>
+
+      <ul class="semana">
+        @for (dia of porDia(); track dia.valor) {
+          <li class="dia">
+            <h3>{{ dia.nome }}</h3>
+
+            @if (dia.blocos.length === 0) {
+              <p class="sem-expediente">Sem expediente</p>
+            } @else {
+              <ul class="blocos">
+                @for (bloco of dia.blocos; track bloco.id) {
+                  <li class="bloco">
+                    <span>{{ formatarHora(bloco.horaInicio) }} às {{ formatarHora(bloco.horaFim) }}</span>
+                    <button
+                      matIconButton
+                      type="button"
+                      [disabled]="emRemocao().includes(bloco.id)"
+                      [attr.aria-label]="
+                        'Remover horário de ' +
+                        dia.nome +
+                        ', das ' +
+                        formatarHora(bloco.horaInicio) +
+                        ' às ' +
+                        formatarHora(bloco.horaFim)
+                      "
+                      title="Remover"
+                      (click)="remover(bloco)"
+                    >
+                      <mat-icon aria-hidden="true">delete</mat-icon>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+          </li>
+        }
+      </ul>
+    </section>
+  }
+}

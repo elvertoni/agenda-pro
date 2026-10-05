@@ -18,6 +18,10 @@ npx ng build               # build de produção em dist/
 npx ng test --watch=false  # testes em modo não interativo
 ```
 
+## Tamanho do pacote
+- O aviso de tamanho inicial no `angular.json` é de **700 kB** (o padrão do `ng new`, 500 kB, serve para app vazio) e o erro é de 1 MB. Na F2 o pacote inicial ficou em 606 kB (140 kB transferidos): a maior parte é o runtime do Angular, que cresce conforme se usam mais recursos.
+- Telas novas **sempre lazy** (`loadChildren` ou `loadComponent`). Se o aviso aparecer, conferir primeiro se algum import estático puxou uma tela para o pacote inicial.
+
 ## Proxy em desenvolvimento
 - O front chama **sempre caminhos relativos** (`/api/...`, `/health`). Nenhuma URL da API fica no código.
 - `proxy.conf.json` faz o `ng serve` encaminhar `/api` e `/health` para `http://localhost:5251`, a porta HTTP fixa da API em `AgendaPro.Api/Properties/launchSettings.json`.
@@ -38,6 +42,12 @@ npx ng test --watch=false  # testes em modo não interativo
 - Parâmetros e `data` da rota chegam ao componente como `input()` (`withComponentInputBinding`).
 - Ícones: fonte **Material Symbols** (`<mat-icon>nome_do_icone</mat-icon>`), já configurada em `app.config.ts`.
 - Item novo de menu: acrescentar em `shared/menu.ts` (vale para o menu lateral e para os atalhos da página inicial).
+- **Subscribe em componente:** sempre com `takeUntilDestroyed(this.destroyRef)`. Busca que pode ser repetida (filtro, "tentar de novo") guarda a `Subscription` e faz `unsubscribe()` antes da próxima, para a resposta atrasada não sobrescrever a nova.
+- **Formulários:** `FormGroup` tipado com `nonNullable: true`; validação no front com os mesmos limites do backend (`shared/validadores.ts`, `Validators.maxLength`); erros do servidor entram no campo com `aplicarErrosDoServidor` (`shared/erros.ts`). Para limpar um formulário depois de enviar, usar `FormGroupDirective.resetForm(valores)` (e não `form.reset`), senão os campos limpos aparecem em vermelho.
+- **Envio:** botão `[disabled]` enquanto envia (signal `enviando`) **e** um `if (enviando()) return` no método, porque `Enter` e clique rápido podem chegar antes de o botão desabilitar.
+- **Confirmação** de ação destrutiva ou irreversível: `ConfirmacaoService.confirmar(...)` (`shared/`), nunca `window.confirm`. Nos testes de tela, trocar o service por um falso que responde `of(true)` ou `of(false)`.
+- **Testes de tela:** services trocados por falsos (`useValue` com `vi.fn`), `MatSnackBar` falso para conferir a mensagem, e `criarApiError()` (`src/app/testing/api-error.ts`) para simular as falhas que o interceptor entregaria. Testar os estados carregando, vazio, erro e sucesso, e o botão desabilitado durante o envio.
+- **Tabela no celular:** abaixo de 600 px a linha vira cartão por CSS (veja `profissionais-lista.scss`); só rolar na horizontal se as ações continuarem visíveis. O `<tbody>` nasce dentro do `mat-table`, então só `:host ::ng-deep` o alcança.
 - Nomes do domínio em português (`Profissional`, `Agendamento`). Comentários em português, curtos, explicando o **porquê**.
 
 **Contratos da API**

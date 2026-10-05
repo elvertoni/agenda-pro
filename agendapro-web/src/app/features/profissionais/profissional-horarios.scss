@@ -1,0 +1,92 @@
+.estado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+
+  .erro {
+    color: var(--mat-sys-error);
+  }
+}
+
+.especialidade {
+  margin: 0 0 8px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+h2 {
+  margin: 24px 0 8px;
+  font: var(--mat-sys-title-large);
+}
+
+h3 {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+
+.formulario {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  // O botão alinha com o campo, não com a mensagem de erro que pode aparecer embaixo dele.
+  button {
+    margin-top: 8px;
+  }
+}
+
+.erro-geral {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  color: var(--mat-sys-error);
+}
+
+.semana,
+.blocos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dia {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  h3 {
+    min-width: 140px;
+  }
+}
+
+.sem-expediente {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.bloco {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+// Celular: o dia fica em cima e os blocos embaixo, em vez de empurrar a página para o lado.
+@media (max-width: 599.98px) {
+  .dia {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

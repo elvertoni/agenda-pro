@@ -1,0 +1,76 @@
+<a matButton routerLink="/profissionais">
+  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+  Voltar para a lista
+</a>
+
+<h1>{{ modoEdicao() ? 'Editar profissional' : 'Novo profissional' }}</h1>
+
+@switch (estado()) {
+  @case ('carregando') {
+    <div class="estado" role="status">
+      <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
+      <span>Carregando profissional...</span>
+    </div>
+  }
+
+  @case ('nao-encontrado') {
+    <div class="estado" role="alert">
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Profissional não encontrado.</span>
+    </div>
+  }
+
+  @case ('erro') {
+    <div class="estado" role="alert">
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Não foi possível carregar o profissional.</span>
+      <button matButton type="button" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+
+  @case ('pronto') {
+    <form class="formulario" [formGroup]="form" (ngSubmit)="salvar()">
+      @if (erroGeral(); as mensagem) {
+        <p class="erro-geral" role="alert">
+          <mat-icon aria-hidden="true">error</mat-icon>
+          {{ mensagem }}
+        </p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" autocomplete="off" />
+        <mat-error>
+          @if (form.controls.nome.hasError('obrigatorio')) {
+            Informe o nome.
+          } @else if (form.controls.nome.hasError('maxlength')) {
+            O nome pode ter no máximo {{ maxNome }} caracteres.
+          } @else {
+            {{ form.controls.nome.getError('servidor') }}
+          }
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Especialidade</mat-label>
+        <input matInput formControlName="especialidade" autocomplete="off" />
+        <mat-error>
+          @if (form.controls.especialidade.hasError('obrigatorio')) {
+            Informe a especialidade.
+          } @else if (form.controls.especialidade.hasError('maxlength')) {
+            A especialidade pode ter no máximo {{ maxEspecialidade }} caracteres.
+          } @else {
+            {{ form.controls.especialidade.getError('servidor') }}
+          }
+        </mat-error>
+      </mat-form-field>
+
+      <div class="botoes">
+        <button matButton="filled" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Salvando...' : 'Salvar' }}
+        </button>
+        <a matButton routerLink="/profissionais">Cancelar</a>
+      </div>
+    </form>
+  }
+}
