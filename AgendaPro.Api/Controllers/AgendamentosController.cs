@@ -39,6 +39,14 @@ public class AgendamentosController(AgendamentoService agendamentos) : Controlle
         return await agendamentos.Listar(profissionalId, data, status);
     }
 
+    [HttpGet("{id:int}/auditoria")]
+    public async Task<ActionResult<List<AuditoriaDto>>> Auditoria(int id)
+    {
+        var historico = await agendamentos.ObterAuditoria(id);
+
+        return historico is null ? NotFound() : historico;
+    }
+
     [HttpPatch("{id:int}/cancelar")]
     public async Task<ActionResult<AgendamentoDto>> Cancelar(int id) =>
         ConverterResultado(await agendamentos.Cancelar(id));

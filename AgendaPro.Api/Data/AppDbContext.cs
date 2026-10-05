@@ -9,6 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<HorarioTrabalho> HorariosTrabalho => Set<HorarioTrabalho>();
     public DbSet<Cliente> Clientes => Set<Cliente>();
     public DbSet<Agendamento> Agendamentos => Set<Agendamento>();
+    public DbSet<AuditoriaAgendamento> AuditoriaAgendamentos => Set<AuditoriaAgendamento>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -29,6 +30,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             e.Property(a => a.Status).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(a => new { a.ProfissionalId, a.DataHoraInicio });
+
+            // Avisa o EF que a tabela tem trigger: sem isso, o SaveChanges falha com o erro
+            // "OUTPUT clause cannot be used on a table with enabled triggers".
+            e.ToTable(t => t.HasTrigger("trg_Agendamentos_Auditoria"));
+        });
+
+        mb.Entity<AuditoriaAgendamento>(e =>
+        {
+            e.Property(a => a.StatusAnterior).HasConversion<string>().HasMaxLength(20);
+            e.Property(a => a.StatusNovo).HasConversion<string>().HasMaxLength(20);
+            e.Property(a => a.UsuarioBanco).HasMaxLength(128);
+            e.HasIndex(a => a.AgendamentoId);
         });
     }
 }

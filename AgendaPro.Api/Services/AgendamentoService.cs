@@ -157,6 +157,20 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
                         && a.DataHoraInicio < dia.AddDays(1))
             .ToListAsync();
 
+    // Histórico de status do agendamento (gravado pelo trigger). Null = o agendamento não existe.
+    public async Task<List<AuditoriaDto>?> ObterAuditoria(int agendamentoId)
+    {
+        if (!await db.Agendamentos.AnyAsync(a => a.Id == agendamentoId))
+            return null;
+
+        return await db.AuditoriaAgendamentos
+            .AsNoTracking()
+            .Where(a => a.AgendamentoId == agendamentoId)
+            .OrderBy(a => a.AlteradoEm).ThenBy(a => a.Id)
+            .Select(a => new AuditoriaDto(a.Id, a.StatusAnterior, a.StatusNovo, a.AlteradoEm))
+            .ToListAsync();
+    }
+
     public async Task<AgendamentoDto?> Obter(int id) =>
         await db.Agendamentos
             .AsNoTracking()
