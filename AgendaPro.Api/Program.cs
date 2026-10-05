@@ -1,4 +1,5 @@
 using AgendaPro.Api.Data;
+using AgendaPro.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
@@ -16,6 +17,8 @@ builder.Services.AddOpenApi();
 
 // "Agora" vem do TimeProvider injetado: nos testes dá para trocar por um relógio falso.
 builder.Services.AddSingleton(TimeProvider.System);
+
+builder.Services.AddScoped<AgendamentoService>();
 
 // Padroniza as respostas de erro no formato ProblemDetails (RFC 9457).
 builder.Services.AddProblemDetails();
@@ -43,3 +46,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Necessário para os testes de integração (WebApplicationFactory<Program>) enxergarem esta classe.
+public partial class Program { }
