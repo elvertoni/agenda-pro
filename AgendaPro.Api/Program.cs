@@ -14,7 +14,20 @@ builder.Services.AddControllers()
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// "Agora" vem do TimeProvider injetado: nos testes dá para trocar por um relógio falso.
+builder.Services.AddSingleton(TimeProvider.System);
+
+// Padroniza as respostas de erro no formato ProblemDetails (RFC 9457).
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
+
+// Em Development a página de erro do desenvolvedor (automática) já mostra o stack trace.
+// Fora dele, exceção não tratada vira ProblemDetails 500 genérico, sem vazar detalhes.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
