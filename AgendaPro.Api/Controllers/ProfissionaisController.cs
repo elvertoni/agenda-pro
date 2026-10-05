@@ -11,10 +11,19 @@ namespace AgendaPro.Api.Controllers;
 public class ProfissionaisController(AppDbContext db) : ControllerBase
 {
     [HttpGet]
-    public async Task<ActionResult<List<ProfissionalDto>>> Listar()
+    public async Task<ActionResult<List<ProfissionalDto>>> Listar(
+        [FromQuery] string? especialidade, [FromQuery] bool? ativo)
     {
-        return await db.Profissionais
-            .AsNoTracking()
+        var consulta = db.Profissionais.AsNoTracking();
+
+        // Filtros opcionais: só entram na consulta quando o parâmetro foi informado.
+        if (!string.IsNullOrWhiteSpace(especialidade))
+            consulta = consulta.Where(p => p.Especialidade.Contains(especialidade));
+
+        if (ativo.HasValue)
+            consulta = consulta.Where(p => p.Ativo == ativo.Value);
+
+        return await consulta
             .OrderBy(p => p.Nome)
             .Select(p => new ProfissionalDto(p.Id, p.Nome, p.Especialidade, p.Ativo))
             .ToListAsync();
@@ -48,5 +57,39 @@ public class ProfissionaisController(AppDbContext db) : ControllerBase
             profissional.Id, profissional.Nome, profissional.Especialidade, profissional.Ativo);
 
         return CreatedAtAction(nameof(Obter), new { id = profissional.Id }, resposta);
+    }
+
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<ProfissionalDto>> Atualizar(int id, AtualizarProfissionalDto dto)
+    {
+        // Precisa de tracking: o EF detecta o que mudou e gera o UPDATE.
+        var profissional = await db.Profissionais.FirstOrDefaultAsync(p => p.Id == id);
+
+        if (profissional is null)
+            return NotFound();
+
+        // Ativo não muda aqui: tem endpoint próprio (PATCH .../ativo).
+        profissional.Nome = dto.Nome;
+        profissional.Especialidade = dto.Especialidade;
+        await db.SaveChangesAsync();
+
+        return new ProfissionalDto(
+            profissional.Id, profissional.Nome, profissional.Especialidade, profissional.Ativo);
+    }
+
+    [HttpPatch("{id:int}/ativo")]
+    public async Task<ActionResult<ProfissionalDto>> AlterarAtivo(int id, AlterarAtivoDto dto)
+    {
+        var profissional = await db.Profissionais.FirstOrDefaultAsync(p => p.Id == id);
+
+        if (profissional is null)
+            return NotFound();
+
+        // O [Required] do DTO garante que Ativo tem valor aqui.
+        profissional.Ativo = dto.Ativo!.Value;
+        await db.SaveChangesAsync();
+
+        return new ProfissionalDto(
+            profissional.Id, profissional.Nome, profissional.Especialidade, profissional.Ativo);
     }
 }

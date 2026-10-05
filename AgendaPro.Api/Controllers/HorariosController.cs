@@ -1,6 +1,7 @@
 using AgendaPro.Api.Data;
 using AgendaPro.Api.Dtos;
 using AgendaPro.Api.Models;
+using AgendaPro.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,6 +37,19 @@ public class HorariosController(AppDbContext db) : ControllerBase
                 detail: "A hora de fim deve ser maior que a hora de início.",
                 statusCode: StatusCodes.Status400BadRequest);
 
+        // Só traz as horas do mesmo dia; a comparação em si fica na função pura Intervalos.Sobrepoe.
+        var existentes = await db.HorariosTrabalho
+            .AsNoTracking()
+            .Where(h => h.ProfissionalId == profissionalId && h.DiaSemana == dto.DiaSemana)
+            .Select(h => new { h.HoraInicio, h.HoraFim })
+            .ToListAsync();
+
+        if (existentes.Any(h => Intervalos.Sobrepoe(h.HoraInicio, h.HoraFim, dto.HoraInicio, dto.HoraFim)))
+            return Problem(
+                title: "Horário sobreposto",
+                detail: "Já existe um horário de trabalho que se sobrepõe a este nesse dia.",
+                statusCode: StatusCodes.Status409Conflict);
+
         var horario = new HorarioTrabalho
         {
             ProfissionalId = profissionalId,
@@ -49,5 +63,22 @@ public class HorariosController(AppDbContext db) : ControllerBase
 
         var resposta = new HorarioDto(horario.Id, horario.DiaSemana, horario.HoraInicio, horario.HoraFim);
         return CreatedAtAction(nameof(Listar), new { profissionalId }, resposta);
+    }
+
+    [HttpDelete("{horarioId:int}")]
+    public async Task<IActionResult> Remover(int profissionalId, int horarioId)
+    {
+        // Filtrar por Id e ProfissionalId juntos impede apagar o horário de outro profissional.
+        // Precisa de tracking: o EF usa a entidade carregada para gerar o DELETE.
+        var horario = await db.HorariosTrabalho
+            .FirstOrDefaultAsync(h => h.Id == horarioId && h.ProfissionalId == profissionalId);
+
+        if (horario is null)
+            return NotFound();
+
+        db.HorariosTrabalho.Remove(horario);
+        await db.SaveChangesAsync();
+
+        return NoContent();
     }
 }
