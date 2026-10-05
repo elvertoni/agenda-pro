@@ -1,0 +1,31 @@
+<h1>AgendaPro</h1>
+<p class="subtitulo">Agendamento de profissionais. Escolha por onde começar.</p>
+
+<!-- role="status": o leitor de tela anuncia quando o estado muda, sem tirar o foco de onde está. -->
+<div class="estado-api" role="status">
+  @switch (estadoApi()) {
+    @case ('carregando') {
+      <mat-progress-spinner mode="indeterminate" diameter="20" aria-hidden="true" />
+      <span>Verificando a conexão com a API...</span>
+    }
+    @case ('conectada') {
+      <mat-icon class="ok" aria-hidden="true">check_circle</mat-icon>
+      <span>API conectada.</span>
+    }
+    @case ('fora-do-ar') {
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Sem resposta da API. Confira se ela está rodando.</span>
+      <button matButton type="button" (click)="verificarApi()">Tentar de novo</button>
+    }
+  }
+</div>
+
+<nav class="atalhos" aria-label="Atalhos">
+  @for (item of atalhos; track item.rota) {
+    <a class="atalho" [routerLink]="item.rota">
+      <mat-icon aria-hidden="true">{{ item.icone }}</mat-icon>
+      <span class="atalho-titulo">{{ item.rotulo }}</span>
+      <span class="atalho-descricao">{{ item.descricao }}</span>
+    </a>
+  }
+</nav>

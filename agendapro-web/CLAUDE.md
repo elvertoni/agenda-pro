@@ -34,7 +34,10 @@ npx ng test --watch=false  # testes em modo não interativo
 - HTTP **somente em services** (`core/api`), nunca em componentes. Interfaces TypeScript espelham os DTOs da API.
 - Estrutura: `src/app/core` (services de API, interceptors, models), `src/app/features/{profissionais,clientes,agendamentos,relatorios}` (rotas com lazy loading) e `src/app/shared`.
 - UI com **Angular Material**, textos em português do Brasil, locale `pt-BR` (`LOCALE_ID`, `MAT_DATE_LOCALE`).
-- Nomes de arquivo no estilo atual do CLI (`app.ts`, `app.html`), sem o sufixo `.component`.
+- Nomes de arquivo: componentes no estilo atual do CLI (`app.ts`, `inicio.ts`), sem o sufixo `.component`. Services e interceptors **mantêm o sufixo** (`profissionais.service.ts` / `ProfissionaisService`, `erro.interceptor.ts`): fica claro o que é cada arquivo e não confunde com o modelo `Profissional`.
+- Parâmetros e `data` da rota chegam ao componente como `input()` (`withComponentInputBinding`).
+- Ícones: fonte **Material Symbols** (`<mat-icon>nome_do_icone</mat-icon>`), já configurada em `app.config.ts`.
+- Item novo de menu: acrescentar em `shared/menu.ts` (vale para o menu lateral e para os atalhos da página inicial).
 - Nomes do domínio em português (`Profissional`, `Agendamento`). Comentários em português, curtos, explicando o **porquê**.
 
 **Contratos da API**
@@ -43,9 +46,10 @@ npx ng test --watch=false  # testes em modo não interativo
 
 **Erros (uma estratégia só, sem mensagem duplicada)**
 - Um **HTTP interceptor** converte todo erro em um tipo `ApiError` (status, `title`, `detail` e erros por campo vindos do objeto `errors` do ProblemDetails).
-- O interceptor **só mostra snackbar** para falha de conexão (status 0: "Não foi possível conectar à API") e erros 5xx.
+- O interceptor **só mostra snackbar** para falha de conexão ("Não foi possível conectar à API") e para os demais erros 5xx. Falha de conexão é status 0 ou 502/504: com a API parada, o proxy (`ng serve` ou nginx) responde 502, não 0.
 - Erros **4xx são tratados pela tela**, que tem contexto: 400 de validação vira erro no campo do formulário; 409 vira mensagem específica (e, na tela de agendar, recarrega a disponibilidade); 404 vira "não encontrado".
-- As chaves de `errors` vêm em PascalCase (`Nome`); mapear para os controles do formulário em camelCase (`nome`).
+- As chaves de `errors` vêm em PascalCase (`Nome`); o interceptor já entrega em camelCase (`nome`) em `ApiError.errosPorCampo`, igual aos controles do formulário.
+- As mensagens de validação da API vêm **em inglês** (`The Nome field is required.`): a tela valida antes de enviar e mostra o próprio texto em português.
 
 **Datas e horas (fonte comum de bug)**
 - A API trabalha com horário local da clínica, **sem fuso**.

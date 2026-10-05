@@ -35,3 +35,28 @@ Por que escolhi o proxy, mesmo com o CORS da API já liberando a porta 4200:
 - **Sem preflight** a cada requisição de escrita.
 
 O proxy do `ng serve` existe **só em desenvolvimento**: o build de produção são arquivos estáticos, e quem encaminha o `/api` passa a ser o nginx.
+
+## Fase F1 — Estrutura, navegação e base técnica
+
+### 1. O que é um HTTP interceptor? Por que tratar os erros nele, e por que ele só avisa na tela em falha de conexão e erro 5xx?
+
+Um interceptor é uma função por onde passam **todas** as requisições e respostas do `HttpClient`, parecido com um middleware do ASP.NET Core. Ele é registrado uma vez, em `app.config.ts`: `provideHttpClient(withInterceptors([erroInterceptor]))`. O `erroInterceptor` chama `next(req)`, que devolve um Observable com a resposta, e usa `catchError` para agir só quando a requisição falha.
+
+**Por que centralizar:** sem ele, cada service ou componente teria que entender o `HttpErrorResponse` e o ProblemDetails da API. Com ele, toda tela recebe o mesmo tipo, `ApiError` (`status`, `title`, `detail` e `errosPorCampo`), e a conversão das chaves `Nome` para `nome` fica escrita em um lugar só.
+
+**Por que ele não avisa nos 4xx:** o interceptor não sabe o contexto. Um 409 na tela de agendar significa "o horário acabou de ser ocupado, recarregue os horários"; no cadastro de cliente significa "CPF já cadastrado, mostre no campo". Só a tela sabe o que fazer. Se o interceptor também avisasse, o usuário veria **duas mensagens** para o mesmo erro.
+
+**Por que ele avisa em falha de conexão e 5xx:** nenhuma tela resolve isso e a mensagem é igual em todas. Depois do aviso ele repassa o erro com `throwError`, para a tela ainda poder mostrar o próprio estado de erro.
+
+Detalhe encontrado ao testar: com a API parada, quem responde é o proxy, com **502**, e não o status 0. Por isso 0, 502 e 504 contam como "não foi possível conectar".
+
+### 2. Por que `toISOString()` e `new Date("2026-10-12")` dão o dia errado no Brasil? Como o projeto evita isso?
+
+Um `Date` do JavaScript guarda um **instante** (milissegundos desde 1970 em UTC), não "um dia no calendário". O dia que aparece depende do fuso usado para ler esse instante.
+
+- **Na ida:** `toISOString()` sempre escreve em UTC. O Brasil está em UTC-3, então 12/10 às 22h aqui já é 13/10 à 1h em UTC. `toISOString().slice(0, 10)` devolve `2026-10-13`: o agendamento iria para o **dia seguinte**.
+- **Na volta:** `new Date("2026-10-12")`, com texto só de data, é lido como meia-noite **UTC**, que no Brasil é 11/10 às 21h. `getDate()` devolve 11: a tela mostraria o **dia anterior**.
+
+A API trabalha com o horário local da clínica, sem fuso, então a data nunca pode passar por UTC. O `shared/datas.ts` monta o texto a partir das partes locais (`getFullYear()`, `getMonth() + 1`, `getDate()`, `getHours()`) e lê separando o texto e chamando `new Date(ano, mes - 1, dia)`, que cria a data no horário local. Nenhuma tela faz essa conta: todas usam essas funções.
+
+Os testes cobrem o caso das 22h. Eles só provam algo fora de UTC: em UTC as duas formas dão o mesmo resultado. Nesta máquina (UTC-3) as versões com o bug devolvem dia 13 e dia 11, então os testes falhariam. No CI, o job do front deve rodar com `TZ=America/Sao_Paulo`.

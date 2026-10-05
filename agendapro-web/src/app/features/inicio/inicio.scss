@@ -1,0 +1,62 @@
+.subtitulo {
+  margin: 0 0 16px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.estado-api {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+  margin-bottom: 24px;
+
+  // O estado não depende só da cor: cada um tem ícone e texto próprios.
+  .ok {
+    color: var(--mat-sys-primary);
+  }
+
+  .erro {
+    color: var(--mat-sys-error);
+  }
+}
+
+// Grade que se ajusta sozinha: 4 colunas na tela larga, 1 no celular.
+.atalhos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.atalho {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  color: inherit;
+  text-decoration: none;
+
+  mat-icon {
+    color: var(--mat-sys-primary);
+  }
+
+  &:hover {
+    background-color: var(--mat-sys-surface-container);
+  }
+
+  // Foco visível para quem navega pelo teclado.
+  &:focus-visible {
+    outline: 2px solid var(--mat-sys-primary);
+    outline-offset: 2px;
+  }
+}
+
+.atalho-titulo {
+  font: var(--mat-sys-title-medium);
+}
+
+.atalho-descricao {
+  color: var(--mat-sys-on-surface-variant);
+}

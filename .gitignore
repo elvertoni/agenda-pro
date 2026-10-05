@@ -6,6 +6,9 @@
 # dotenv files
 .env
 
+# Capturas e registros do Playwright (conferência das telas no navegador)
+.playwright-mcp/
+
 # User-specific files
 *.rsuser
 *.suo

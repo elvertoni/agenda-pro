@@ -1,0 +1,39 @@
+// A moldura ocupa a janela inteira: barra em cima e o corpo (menu + página) no espaço que sobra.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.barra {
+  gap: 8px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.marca {
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-title-large);
+  text-decoration: none;
+}
+
+.corpo {
+  flex: 1;
+}
+
+.menu {
+  width: 240px;
+}
+
+.pagina {
+  box-sizing: border-box;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+// Celular: menos margem para sobrar largura para o conteúdo.
+@media (max-width: 599.98px) {
+  .pagina {
+    padding: 16px;
+  }
+}

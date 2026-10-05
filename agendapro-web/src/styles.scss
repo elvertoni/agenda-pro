@@ -36,4 +36,9 @@ body {
   margin: 0;
   height: 100%;
 }
-/* You can add global styles to this file, and also import other style files */
+
+// Título de página: o mesmo estilo em todas as telas.
+h1 {
+  margin: 0 0 8px;
+  font: var(--mat-sys-headline-medium);
+}
