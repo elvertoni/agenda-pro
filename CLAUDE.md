@@ -12,7 +12,8 @@ O dono do projeto (Toni) está relembrando .NET para entrevistas técnicas: o c�
 ## Estrutura
 ```
 agenda-pro/                  (solução AgendaPro.sln)
-└── AgendaPro.Api/           Controllers, Data, Dtos, Models, Migrations
+├── AgendaPro.Api/           Controllers, Data, Dtos, Models, Migrations
+└── agendapro-web/           Front-end Angular (convenções em agendapro-web/CLAUDE.md, fases em PLANO_FRONT_ANGULAR.md)
 ```
 
 ## Estado atual (pronto e testado manualmente)
@@ -47,7 +48,7 @@ dotnet ef migrations add <Nome> --project AgendaPro.Api --startup-project Agenda
 dotnet ef database update --project AgendaPro.Api --startup-project AgendaPro.Api
 docker start sqlserver-agenda
 ```
-`dotnet run` mostra a porta no `Now listening on`: ela muda a cada projeto, nunca assuma 5000/5121/5251.
+Neste projeto a API escuta em `http://localhost:5251`, porta fixa em `AgendaPro.Api/Properties/launchSettings.json`. O proxy do front (`agendapro-web/proxy.conf.json`) depende dela: se mudar uma, mude a outra. Em outros projetos a porta é outra: confira no `Now listening on`.
 
 ## Regras de trabalho com o Toni
 - Trabalhe **uma fase por vez**, conforme `PLANO_CLAUDE_CODE.md`. Ao fim de cada fase: build + testes, resumo em português simples explicando o **porquê** das decisões, 2 perguntas de entrevista, commit, e **pare** aguardando "continuar".
