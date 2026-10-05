@@ -13,7 +13,7 @@ Decisões já tomadas pelo Toni:
 2. Código simples, legível e explicável por um júnior. Prefira o padrão oficial do Angular a soluções "espertas".
 3. **Os testes acompanham cada fase**: todo service, validador ou função utilitária criado na fase sai com seus testes. A Fase F7 só consolida e cobre o que faltou.
 4. Ao terminar, rode o build (`ng build`) e os testes em modo não interativo; corrija o que falhar.
-5. Entregue um resumo em português simples com: arquivos criados/alterados; **por que** de cada decisão; como testar manualmente (passo a passo na tela); **2 perguntas de entrevista** sobre Angular/TypeScript relacionadas ao que foi feito, **sem a resposta**.
+5. Entregue um resumo em português simples com: arquivos criados/alterados; **por que** de cada decisão; como testar manualmente (passo a passo na tela); **2 perguntas de entrevista** sobre Angular/TypeScript relacionadas ao que foi feito, **já com a resposta** (rascunho do Claude), registradas em `docs/PERGUNTAS_ENTREVISTA_FRONT.md` e no guia do Notion.
 6. Faça um commit em português e **pare**. Só avance quando o Toni escrever "continuar".
 7. Dependências npm: apenas as que `ng new` e `ng add` instalam, mais Angular Material/CDK. Nada extra sem justificar e pedir aprovação.
 8. Os contratos da API (rotas, DTOs, status, filtros, paginação) devem ser lidos de `/openapi/v1.json` ou do código do backend. Nunca adivinhe campos.
@@ -137,5 +137,5 @@ Testes: o componente no fluxo feliz e no 409 (com services simulados), e a monta
 ## Fase F9 — Documentação
 
 - Atualizar o `README.md` da raiz: arquitetura com o front, como rodar (Docker e local), estrutura do monorepo, ausência de autenticação como próximo passo. Deixar marcado onde entram os **prints/GIF** das telas (o Toni tira e insere).
-- `docs/PERGUNTAS_ENTREVISTA_FRONT.md`: consolidar as perguntas das fases, com respostas curtas **escritas pelo Toni**.
+- `docs/PERGUNTAS_ENTREVISTA_FRONT.md`: revisar as perguntas e respostas acumuladas a cada fase (rascunho do Claude, para o Toni refazer com as próprias palavras).
 - Revisão final: subir tudo do zero, testes verdes, `git status` limpo e lista do que ficou pendente.
