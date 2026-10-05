@@ -1,13 +1,11 @@
 import { Routes } from '@angular/router';
-import { EmConstrucao } from '../../shared/em-construcao';
+import { ClienteForm } from './cliente-form';
+import { ClientesLista } from './clientes-lista';
 
 // Rotas da feature, carregadas sob demanda (loadChildren no app.routes.ts).
-// Na Fase F3 entram aqui a lista, o cadastro e a edição.
+// O ":id" do endereço chega ao componente como input() (withComponentInputBinding).
 export const CLIENTES_ROUTES: Routes = [
-  {
-    path: '',
-    title: 'Clientes — AgendaPro',
-    component: EmConstrucao,
-    data: { titulo: 'Clientes', fase: 'F3' },
-  },
+  { path: '', title: 'Clientes — AgendaPro', component: ClientesLista },
+  { path: 'novo', title: 'Novo cliente — AgendaPro', component: ClienteForm },
+  { path: ':id/editar', title: 'Editar cliente — AgendaPro', component: ClienteForm },
 ];

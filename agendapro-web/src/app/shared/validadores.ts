@@ -1,4 +1,5 @@
 import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { cpfEhValido } from './cpf';
 
 // Validators.required aceita "   " (só espaços). A API rejeita, então o front também precisa rejeitar.
 export function obrigatorioSemEspacos(controle: AbstractControl): ValidationErrors | null {
@@ -6,6 +7,17 @@ export function obrigatorioSemEspacos(controle: AbstractControl): ValidationErro
   const vazio = typeof valor !== 'string' || valor.trim().length === 0;
 
   return vazio ? { obrigatorio: true } : null;
+}
+
+// Campo vazio não gera este erro: quem avisa é o "obrigatório" do próprio campo.
+export function cpfValido(controle: AbstractControl): ValidationErrors | null {
+  const valor: unknown = controle.value;
+
+  if (typeof valor !== 'string' || valor.trim().length === 0) {
+    return null;
+  }
+
+  return cpfEhValido(valor) ? null : { cpfInvalido: true };
 }
 
 // Validador de grupo: compara dois campos de hora "HH:mm". Texto com zero à esquerda

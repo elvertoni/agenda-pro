@@ -1,0 +1,98 @@
+<a matButton routerLink="/clientes">
+  <mat-icon aria-hidden="true">arrow_back</mat-icon>
+  Voltar para a lista
+</a>
+
+<h1>{{ modoEdicao() ? 'Editar cliente' : 'Novo cliente' }}</h1>
+
+@switch (estado()) {
+  @case ('carregando') {
+    <div class="estado" role="status">
+      <mat-progress-spinner mode="indeterminate" diameter="24" aria-hidden="true" />
+      <span>Carregando cliente...</span>
+    </div>
+  }
+
+  @case ('nao-encontrado') {
+    <div class="estado" role="alert">
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Cliente não encontrado.</span>
+    </div>
+  }
+
+  @case ('erro') {
+    <div class="estado" role="alert">
+      <mat-icon class="erro" aria-hidden="true">error</mat-icon>
+      <span>Não foi possível carregar o cliente.</span>
+      <button matButton type="button" (click)="carregar()">Tentar de novo</button>
+    </div>
+  }
+
+  @case ('pronto') {
+    <form class="formulario" [formGroup]="form" (ngSubmit)="salvar()">
+      @if (erroGeral(); as mensagem) {
+        <p class="erro-geral" role="alert">
+          <mat-icon aria-hidden="true">error</mat-icon>
+          {{ mensagem }}
+        </p>
+      }
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nome</mat-label>
+        <input matInput formControlName="nome" autocomplete="off" />
+        <mat-error>
+          @if (form.controls.nome.hasError('obrigatorio')) {
+            Informe o nome.
+          } @else if (form.controls.nome.hasError('maxlength')) {
+            O nome pode ter no máximo {{ maxNome }} caracteres.
+          } @else {
+            {{ form.controls.nome.getError('servidor') }}
+          }
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>CPF</mat-label>
+        <input
+          matInput
+          formControlName="cpf"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="000.000.000-00"
+          (input)="aplicarMascaraDoCpf($event)"
+        />
+        @if (modoEdicao()) {
+          <mat-hint>O CPF não pode ser alterado.</mat-hint>
+        }
+        <mat-error>
+          @if (form.controls.cpf.hasError('obrigatorio')) {
+            Informe o CPF.
+          } @else if (form.controls.cpf.hasError('cpfInvalido')) {
+            CPF inválido. Confira os números.
+          } @else {
+            {{ form.controls.cpf.getError('servidor') }}
+          }
+        </mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Telefone (opcional)</mat-label>
+        <input matInput type="tel" formControlName="telefone" autocomplete="off" />
+        <mat-error>
+          @if (form.controls.telefone.hasError('maxlength')) {
+            O telefone pode ter no máximo {{ maxTelefone }} caracteres.
+          } @else {
+            {{ form.controls.telefone.getError('servidor') }}
+          }
+        </mat-error>
+      </mat-form-field>
+
+      <div class="botoes">
+        <button matButton="filled" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Salvando...' : 'Salvar' }}
+        </button>
+        <a matButton routerLink="/clientes">Cancelar</a>
+      </div>
+    </form>
+  }
+}

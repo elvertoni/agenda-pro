@@ -1,5 +1,23 @@
 import { FormControl, FormGroup } from '@angular/forms';
-import { fimDepoisDoInicio, obrigatorioSemEspacos } from './validadores';
+import { cpfValido, fimDepoisDoInicio, obrigatorioSemEspacos } from './validadores';
+
+describe('cpfValido', () => {
+  it.each(['529.982.247-25', '52998224725'])('aceita o CPF %s', (cpf) => {
+    expect(cpfValido(new FormControl(cpf))).toBeNull();
+  });
+
+  it.each(['529.982.247-24', '111.111.111-11', '123'])('recusa o CPF %s', (cpf) => {
+    expect(cpfValido(new FormControl(cpf))).toEqual({ cpfInvalido: true });
+  });
+
+  it.each(['', '   '])('campo vazio não gera este erro: quem avisa é o "obrigatório" ("%s")', (texto) => {
+    expect(cpfValido(new FormControl(texto))).toBeNull();
+  });
+
+  it('valor nulo também não gera este erro', () => {
+    expect(cpfValido(new FormControl(null))).toBeNull();
+  });
+});
 
 describe('obrigatorioSemEspacos', () => {
   it.each(['', '   ', '\t'])('recusa o texto "%s"', (texto) => {
