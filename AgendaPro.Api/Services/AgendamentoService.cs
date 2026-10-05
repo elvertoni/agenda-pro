@@ -55,6 +55,18 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
                 StatusCodes.Status400BadRequest, "Horário fora do expediente do profissional.",
                 "O agendamento precisa caber inteiro em um horário de trabalho do dia.");
 
+        // CONCORRÊNCIA: "checar conflito" e "gravar" são dois passos. Sem proteção, duas requisições
+        // para o mesmo horário passam juntas pela checagem e criam agendamentos sobrepostos.
+        // Solução: dentro de uma transação, travar a linha do PROFISSIONAL (UPDLOCK) antes de checar.
+        // Quem disputa o mesmo profissional espera na fila; quando chega a vez, relê os agendamentos
+        // já confirmados e enxerga o conflito (vira 409). Outros profissionais não são afetados.
+        // Preferi isso a IsolationLevel.Serializable, que trava intervalos do índice e pode causar deadlock.
+        // A trava é solta no Commit ou, se retornarmos antes, quando a transação é descartada (Rollback).
+        await using var transacao = await db.Database.BeginTransactionAsync();
+
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT 1 FROM Profissionais WITH (UPDLOCK, ROWLOCK) WHERE Id = {dto.ProfissionalId}");
+
         // 4. Conflito com outros agendamentos do mesmo profissional no mesmo dia.
         // Filtra só pelo início (usa o índice ProfissionalId + DataHoraInicio); funciona porque
         // nenhum agendamento atravessa a meia-noite. O cálculo do fim fica em memória,
@@ -67,9 +79,6 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
                 "O profissional já tem um agendamento que se sobrepõe a este intervalo.");
 
         // 5. Cria o agendamento.
-        // LIMITAÇÃO DE CONCORRÊNCIA: entre a checagem de conflito acima e o SaveChanges, duas requisições
-        // simultâneas podem passar juntas e criar agendamentos sobrepostos. A proteção seria uma
-        // transação com isolamento Serializable; não foi implementada por decisão do projeto.
         var agendamento = new Agendamento
         {
             ProfissionalId = dto.ProfissionalId,
@@ -82,6 +91,7 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
 
         db.Agendamentos.Add(agendamento);
         await db.SaveChangesAsync();
+        await transacao.CommitAsync();
 
         // Os nomes já foram carregados acima: não precisa de outra ida ao banco.
         var resposta = new AgendamentoDto(
