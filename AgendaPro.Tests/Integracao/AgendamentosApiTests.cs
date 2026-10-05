@@ -9,7 +9,8 @@ namespace AgendaPro.Tests.Integracao;
 
 // Testes de ponta a ponta: HTTP -> controller -> service -> SQL Server (banco AgendaPro_Tests).
 // "Agora" do relógio falso é 05/10/2026 (segunda), então 12/10/2026 (segunda) é sempre futuro.
-public class AgendamentosApiTests(AgendaProFactory factory) : IClassFixture<AgendaProFactory>
+[Collection(ColecaoBanco.Nome)]
+public class AgendamentosApiTests(AgendaProFactory factory)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

@@ -28,6 +28,38 @@ public static class RegrasAgendamento
             && horaFim <= h.HoraFim);
     }
 
+    // Fatia cada bloco de trabalho do dia em intervalos consecutivos de "duracaoMinutos", a partir da hora
+    // de início do bloco, e devolve os inícios que ainda estão livres. Reaproveita as mesmas regras do
+    // agendamento (passado e conflito), então o que aparece aqui como livre é aceito pelo POST.
+    public static List<DateTime> GerarHorariosLivres(
+        DateOnly data, int duracaoMinutos, IEnumerable<HorarioTrabalho> horarios,
+        IEnumerable<Agendamento> agendamentosDoDia, DateTime agora)
+    {
+        var livres = new List<DateTime>();
+        var existentes = agendamentosDoDia.ToList(); // evita enumerar a mesma fonte várias vezes
+
+        var blocosDoDia = horarios
+            .Where(h => h.DiaSemana == data.DayOfWeek)
+            .OrderBy(h => h.HoraInicio);
+
+        foreach (var bloco in blocosDoDia)
+        {
+            var inicio = data.ToDateTime(bloco.HoraInicio);
+            var limite = data.ToDateTime(bloco.HoraFim);
+
+            // O intervalo precisa terminar até o fim do bloco; a sobra menor que a duração é descartada.
+            while (inicio.AddMinutes(duracaoMinutos) <= limite)
+            {
+                if (!EstaNoPassado(inicio, agora) && !TemConflito(inicio, duracaoMinutos, existentes))
+                    livres.Add(inicio);
+
+                inicio = inicio.AddMinutes(duracaoMinutos);
+            }
+        }
+
+        return livres;
+    }
+
     // Cancelado libera o horário; concluído continua ocupando (o atendimento aconteceu naquele intervalo).
     public static bool TemConflito(
         DateTime inicio, int duracaoMinutos, IEnumerable<Agendamento> existentes)

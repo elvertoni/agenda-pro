@@ -59,14 +59,7 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
         // Filtra só pelo início (usa o índice ProfissionalId + DataHoraInicio); funciona porque
         // nenhum agendamento atravessa a meia-noite. O cálculo do fim fica em memória,
         // pois DataHoraFim não é mapeada e não pode ir para o SQL.
-        var dia = dto.DataHoraInicio.Date;
-
-        var doDia = await db.Agendamentos
-            .AsNoTracking()
-            .Where(a => a.ProfissionalId == dto.ProfissionalId
-                        && a.DataHoraInicio >= dia
-                        && a.DataHoraInicio < dia.AddDays(1))
-            .ToListAsync();
+        var doDia = await AgendamentosDoDia(dto.ProfissionalId, dto.DataHoraInicio.Date);
 
         if (RegrasAgendamento.TemConflito(dto.DataHoraInicio, dto.DuracaoMinutos, doDia))
             return Resultado<AgendamentoDto>.Falha(
@@ -104,6 +97,55 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
 
         return Resultado<AgendamentoDto>.Sucesso(resposta);
     }
+
+    // Lista os horários livres do profissional em um dia. É só leitura: não grava nada.
+    public async Task<Resultado<DisponibilidadeDto>> ConsultarDisponibilidade(
+        int profissionalId, DateOnly data, int duracaoMinutos)
+    {
+        var profissional = await db.Profissionais
+            .AsNoTracking()
+            .Where(p => p.Id == profissionalId)
+            .Select(p => new { p.Ativo })
+            .FirstOrDefaultAsync();
+
+        if (profissional is null)
+            return Resultado<DisponibilidadeDto>.Falha(
+                StatusCodes.Status404NotFound, "Profissional não encontrado.");
+
+        // Mesmo critério do POST: profissional inativo não recebe agendamentos, então não oferece horários.
+        if (!profissional.Ativo)
+            return Resultado<DisponibilidadeDto>.Falha(
+                StatusCodes.Status400BadRequest, "Profissional inativo.",
+                "Um profissional inativo não tem horários disponíveis.");
+
+        var horarios = await db.HorariosTrabalho
+            .AsNoTracking()
+            .Where(h => h.ProfissionalId == profissionalId && h.DiaSemana == data.DayOfWeek)
+            .ToListAsync();
+
+        var doDia = await AgendamentosDoDia(profissionalId, data.ToDateTime(TimeOnly.MinValue));
+        var agora = relogio.GetLocalNow().DateTime;
+
+        var inicios = RegrasAgendamento.GerarHorariosLivres(data, duracaoMinutos, horarios, doDia, agora);
+
+        var livres = inicios
+            .Select(i => new HorarioLivreDto(
+                TimeOnly.FromDateTime(i), TimeOnly.FromDateTime(i.AddMinutes(duracaoMinutos))))
+            .ToList();
+
+        return Resultado<DisponibilidadeDto>.Sucesso(
+            new DisponibilidadeDto(profissionalId, data, duracaoMinutos, livres));
+    }
+
+    // Filtra só pelo início (usa o índice ProfissionalId + DataHoraInicio); funciona porque nenhum
+    // agendamento atravessa a meia-noite. Traz também os cancelados: quem ignora é RegrasAgendamento.TemConflito.
+    private async Task<List<Agendamento>> AgendamentosDoDia(int profissionalId, DateTime dia) =>
+        await db.Agendamentos
+            .AsNoTracking()
+            .Where(a => a.ProfissionalId == profissionalId
+                        && a.DataHoraInicio >= dia
+                        && a.DataHoraInicio < dia.AddDays(1))
+            .ToListAsync();
 
     public async Task<AgendamentoDto?> Obter(int id) =>
         await db.Agendamentos
