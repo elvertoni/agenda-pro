@@ -1,0 +1,16 @@
+# Fora da imagem: lixo de build, git, segredos e o que não é da API.
+**/bin/
+**/obj/
+.git/
+.vs/
+.vscode/
+.idea/
+.env
+.env.*
+!.env.example
+**/appsettings.Development.json
+**/Dockerfile*
+docker-compose*.yml
+AgendaPro.Tests/
+docs/
+*.md

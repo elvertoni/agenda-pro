@@ -53,7 +53,12 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+// O redirecionamento só faz sentido onde a API escuta HTTPS (dotnet run). No Docker/produção o TLS
+// costuma ficar num proxy na frente e o container só fala HTTP; sem porta HTTPS o middleware só gera aviso.
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Antes da autorização, para a resposta ao "preflight" (OPTIONS) do navegador sair com os cabeçalhos de CORS.
 app.UseCors(PoliticaCors);

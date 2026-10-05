@@ -1,0 +1,50 @@
+# Sobe o banco, aplica as migrations e inicia a API:  docker compose up --build
+# Precisa de um arquivo .env (copie de .env.example).
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Defina MSSQL_SA_PASSWORD no arquivo .env}
+    ports:
+      # 1434 no PC, porque o container "sqlserver-agenda" de desenvolvimento já usa a 1433.
+      - "1434:1433"
+    volumes:
+      # Volume nomeado: os dados sobrevivem a "docker compose down" (só somem com "down -v").
+      - agendapro-dados:/var/opt/mssql
+    healthcheck:
+      # -C aceita o certificado autoassinado do container.
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # Roda uma vez, aplica as migrations pendentes e sai.
+  migrator:
+    build:
+      context: .
+      dockerfile: AgendaPro.Api/Dockerfile
+      target: migrator
+    environment:
+      ConnectionStrings__Default: ${CONNECTION_STRING:?Defina CONNECTION_STRING no arquivo .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: AgendaPro.Api/Dockerfile
+      target: final
+    environment:
+      ConnectionStrings__Default: ${CONNECTION_STRING:?Defina CONNECTION_STRING no arquivo .env}
+      Cors__Origins__0: ${CORS_ORIGIN:-http://localhost:4200}
+    ports:
+      - "8080:8080"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+
+volumes:
+  agendapro-dados:
