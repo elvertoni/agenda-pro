@@ -1,0 +1,67 @@
+name: CI
+
+# Roda a cada push e a cada pull request na main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# O workflow só precisa ler o código.
+permissions:
+  contents: read
+
+env:
+  # Senha do SQL Server que existe SÓ durante esta execução: o container é criado e destruído pelo CI.
+  # Não é segredo de ninguém; a connection string real do projeto fica nos user-secrets e nunca vai para o Git.
+  MSSQL_SA_PASSWORD: CiSenhaDescartavel123
+
+jobs:
+  build-e-testes:
+    runs-on: ubuntu-latest
+
+    # SQL Server de verdade para os testes de integração (trigger, procedure e concorrência não funcionam em banco falso).
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: "Y"
+          MSSQL_SA_PASSWORD: ${{ env.MSSQL_SA_PASSWORD }}
+        ports:
+          - 1433:1433
+        # O job só começa quando o SQL Server estiver aceitando conexões.
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P $MSSQL_SA_PASSWORD -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 20s
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restaurar pacotes
+        run: dotnet restore
+
+      - name: Compilar
+        run: dotnet build --no-restore -c Release
+
+      - name: Testes
+        run: dotnet test --no-build -c Release --verbosity normal
+        env:
+          # O banco precisa se chamar AgendaPro_Tests: a fábrica de testes recusa qualquer outro nome.
+          ConnectionStrings__Tests: Server=localhost,1433;Database=AgendaPro_Tests;User Id=sa;Password=${{ env.MSSQL_SA_PASSWORD }};TrustServerCertificate=True
+
+  # Garante que o Dockerfile continua compilando (sem publicar a imagem em lugar nenhum).
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Imagem da API
+        run: docker build -f AgendaPro.Api/Dockerfile --target final -t agendapro-api .
+      - name: Imagem do migrator
+        run: docker build -f AgendaPro.Api/Dockerfile --target migrator -t agendapro-migrator .
