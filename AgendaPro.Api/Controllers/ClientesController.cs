@@ -22,7 +22,7 @@ public class ClientesController(AppDbContext db) : ControllerBase
 
         return await consulta
             .OrderBy(c => c.Nome)
-            .Select(c => new ClienteDto(c.Id, c.Nome, c.Cpf, c.Telefone))
+            .Select(c => new ClienteDto(c.Id, c.Nome, CpfMascara.Mascarar(c.Cpf), c.Telefone))
             .ToListAsync();
     }
 
@@ -32,7 +32,7 @@ public class ClientesController(AppDbContext db) : ControllerBase
         var cliente = await db.Clientes
             .AsNoTracking()
             .Where(c => c.Id == id)
-            .Select(c => new ClienteDto(c.Id, c.Nome, c.Cpf, c.Telefone))
+            .Select(c => new ClienteDto(c.Id, c.Nome, CpfMascara.Mascarar(c.Cpf), c.Telefone))
             .FirstOrDefaultAsync();
 
         return cliente is null ? NotFound() : cliente;
@@ -70,7 +70,7 @@ public class ClientesController(AppDbContext db) : ControllerBase
             return CpfJaCadastrado();
         }
 
-        var resposta = new ClienteDto(cliente.Id, cliente.Nome, cliente.Cpf, cliente.Telefone);
+        var resposta = new ClienteDto(cliente.Id, cliente.Nome, CpfMascara.Mascarar(cliente.Cpf), cliente.Telefone);
         return CreatedAtAction(nameof(Obter), new { id = cliente.Id }, resposta);
     }
 
@@ -87,7 +87,7 @@ public class ClientesController(AppDbContext db) : ControllerBase
         cliente.Telefone = dto.Telefone;
         await db.SaveChangesAsync();
 
-        return new ClienteDto(cliente.Id, cliente.Nome, cliente.Cpf, cliente.Telefone);
+        return new ClienteDto(cliente.Id, cliente.Nome, CpfMascara.Mascarar(cliente.Cpf), cliente.Telefone);
     }
 
     private ObjectResult CpfJaCadastrado() =>

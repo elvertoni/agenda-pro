@@ -13,4 +13,5 @@ public record AtualizarClienteDto(
     [Required, StringLength(100)] string Nome,
     [StringLength(20)] string? Telefone);
 
+// O Cpf sai sempre mascarado (ex.: ***.456.789-**); o CPF completo só é aceito na entrada.
 public record ClienteDto(int Id, string Nome, string Cpf, string? Telefone);

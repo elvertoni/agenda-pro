@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace AgendaPro.Api.Services;
 
 // Concentra as regras de agendamento. O controller só traduz HTTP; o service não conhece HTTP.
-public class AgendamentoService(AppDbContext db, TimeProvider relogio)
+// Logs estruturados: os valores vão como parâmetros nomeados ({ProfissionalId}), não concatenados no texto,
+// para poderem ser filtrados e pesquisados. Só ids e dados técnicos: nunca CPF, nome ou telefone.
+public class AgendamentoService(AppDbContext db, TimeProvider relogio, ILogger<AgendamentoService> logger)
 {
     public async Task<Resultado<AgendamentoDto>> Criar(CriarAgendamentoDto dto)
     {
@@ -74,9 +76,15 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
         var doDia = await AgendamentosDoDia(dto.ProfissionalId, dto.DataHoraInicio.Date);
 
         if (RegrasAgendamento.TemConflito(dto.DataHoraInicio, dto.DuracaoMinutos, doDia))
+        {
+            logger.LogWarning(
+                "Conflito de horário rejeitado: profissional {ProfissionalId} já tem agendamento em {DataHoraInicio:s} ({DuracaoMinutos} min)",
+                dto.ProfissionalId, dto.DataHoraInicio, dto.DuracaoMinutos);
+
             return Resultado<AgendamentoDto>.Falha(
                 StatusCodes.Status409Conflict, "Já existe um agendamento neste horário.",
                 "O profissional já tem um agendamento que se sobrepõe a este intervalo.");
+        }
 
         // 5. Cria o agendamento.
         var agendamento = new Agendamento
@@ -92,6 +100,11 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
         db.Agendamentos.Add(agendamento);
         await db.SaveChangesAsync();
         await transacao.CommitAsync();
+
+        logger.LogInformation(
+            "Agendamento {AgendamentoId} criado: profissional {ProfissionalId}, cliente {ClienteId}, início {DataHoraInicio:s}, {DuracaoMinutos} min",
+            agendamento.Id, agendamento.ProfissionalId, agendamento.ClienteId,
+            agendamento.DataHoraInicio, agendamento.DuracaoMinutos);
 
         // Os nomes já foram carregados acima: não precisa de outra ida ao banco.
         var resposta = new AgendamentoDto(
@@ -244,6 +257,10 @@ public class AgendamentoService(AppDbContext db, TimeProvider relogio)
 
         agendamento.Status = novoStatus;
         await db.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Agendamento {AgendamentoId} do profissional {ProfissionalId} passou para {NovoStatus}",
+            id, agendamento.ProfissionalId, novoStatus);
 
         // Existe, pois acabamos de alterá-lo; o "!" só silencia a nulabilidade.
         return Resultado<AgendamentoDto>.Sucesso((await Obter(id))!);

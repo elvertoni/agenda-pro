@@ -23,6 +23,16 @@ builder.Services.AddScoped<AgendamentoService>();
 // Padroniza as respostas de erro no formato ProblemDetails (RFC 9457).
 builder.Services.AddProblemDetails();
 
+// CORS: só as origens listadas em Cors:Origins (appsettings) podem chamar a API pelo navegador.
+// Sem a configuração, nenhuma origem é liberada: o padrão é fechado, não aberto.
+const string PoliticaCors = "Frontend";
+var origensPermitidas = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+builder.Services.AddCors(opcoes => opcoes.AddPolicy(PoliticaCors, politica =>
+    politica.WithOrigins(origensPermitidas).AllowAnyHeader().AllowAnyMethod()));
+
+// Health check: além de "a API está de pé", confere se o banco responde.
+builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>();
+
 var app = builder.Build();
 
 // Em Development a página de erro do desenvolvedor (automática) já mostra o stack trace.
@@ -31,6 +41,10 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler();
 }
+
+// Respostas de erro SEM corpo (rota inexistente = 404, método errado = 405) também viram ProblemDetails.
+// Usa o AddProblemDetails() registrado acima; assim todo erro da API tem o mesmo formato.
+app.UseStatusCodePages();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -41,9 +55,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Antes da autorização, para a resposta ao "preflight" (OPTIONS) do navegador sair com os cabeçalhos de CORS.
+app.UseCors(PoliticaCors);
+
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Responde 200 "Healthy" ou 503 "Unhealthy"; o texto não revela detalhes do banco.
+app.MapHealthChecks("/health");
 
 app.Run();
 
